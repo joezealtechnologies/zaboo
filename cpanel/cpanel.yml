@@ -1,0 +1,11 @@
+# cPanel Node.js Application Configuration
+# Use this if your hosting supports Node.js apps
+
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/username/public_html/api
+    - /bin/cp -R server $DEPLOYPATH
+    - /bin/cp package.json $DEPLOYPATH
+    - /bin/cp .env $DEPLOYPATH
+    - cd $DEPLOYPATH && npm install --production
