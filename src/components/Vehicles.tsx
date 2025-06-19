@@ -63,9 +63,17 @@ const Vehicles = () => {
     }));
   };
 
+  // Get the correct image URL based on environment
+  const getImageUrl = (imagePath: string) => {
+    if (import.meta.env.PROD) {
+      return `https://fazona.org${imagePath}`;
+    }
+    return `http://localhost:5000${imagePath}`;
+  };
+
   const openLightbox = (vehicle: Vehicle, initialIndex: number = 0) => {
     // Convert relative paths to full URLs for lightbox
-    const fullImageUrls = vehicle.images.map(img => `http://localhost:5000${img}`);
+    const fullImageUrls = vehicle.images.map(img => getImageUrl(img));
     setLightboxImages(fullImageUrls);
     setLightboxInitialIndex(initialIndex);
     setLightboxVehicleName(vehicle.name);
@@ -202,7 +210,7 @@ const Vehicles = () => {
                 {vehicle.images.length > 0 ? (
                   <>
                     <motion.img
-                      src={`http://localhost:5000${vehicle.images[imageIndexes[vehicle.id] || 0]}`}
+                      src={getImageUrl(vehicle.images[imageIndexes[vehicle.id] || 0])}
                       alt={vehicle.name}
                       className="w-full h-full object-cover cursor-pointer transition-transform duration-500 group-hover:scale-110"
                       onClick={() => openLightbox(vehicle, imageIndexes[vehicle.id] || 0)}
@@ -334,7 +342,7 @@ const Vehicles = () => {
                   onClick={() => handleGetQuote(
                     vehicle.name, 
                     vehicle.price, 
-                    vehicle.images.length > 0 ? `http://localhost:5000${vehicle.images[0]}` : undefined
+                    vehicle.images.length > 0 ? getImageUrl(vehicle.images[0]) : undefined
                   )}
                   className="w-full btn-primary flex items-center justify-center space-x-2"
                 >

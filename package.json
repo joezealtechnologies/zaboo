@@ -1,7 +1,7 @@
 {
   "name": "fazona-ev-website",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,11 @@
     "server": "node server/index.js",
     "dev:full": "concurrently \"npm run server\" \"npm run dev\"",
     "db:setup": "node server/database-setup.js",
-    "db:test": "node server/test-connection.js"
+    "db:test": "node server/test-connection.js",
+    "start": "npm run server",
+    "deploy": "npm run build && pm2 restart ecosystem.config.js --env production",
+    "backup": "bash deploy/backup.sh",
+    "monitor": "bash deploy/monitoring.sh"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -43,6 +47,7 @@
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "dotenv": "^16.3.1",
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "terser": "^5.24.0"
   }
 }
