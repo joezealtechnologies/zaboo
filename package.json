@@ -20,7 +20,10 @@
     "deploy:simple": "bash deploy-simple.sh",
     "deploy:no-sudo": "bash deploy-no-sudo.sh",
     "deploy:minimal": "bash deploy-minimal.sh",
-    "deploy:docker": "bash deploy-docker.sh"
+    "deploy:docker": "bash deploy-docker.sh",
+    "deploy:fix": "bash deploy-vps-fix.sh",
+    "deploy:basic": "bash deploy-basic.sh",
+    "deploy:manual": "bash deploy-manual.sh"
   },
   "dependencies": {
     "react": "^18.2.0",
