@@ -14,6 +14,7 @@ const Vehicles = () => {
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedVehicle, setSelectedVehicle] = useState<{
     name: string;
     price: string;
@@ -33,7 +34,10 @@ const Vehicles = () => {
 
   const fetchVehicles = async () => {
     try {
+      console.log('🔄 Starting to fetch vehicles...');
+      setError(null);
       const response = await vehicleAPI.getAll();
+      console.log('✅ Vehicles fetched successfully:', response.data);
       setVehicles(response.data);
       
       // Initialize image indexes
@@ -42,8 +46,21 @@ const Vehicles = () => {
         indexes[vehicle.id] = 0;
       });
       setImageIndexes(indexes);
-    } catch (error) {
-      console.error('Error fetching vehicles:', error);
+    } catch (error: any) {
+      console.error('❌ Error fetching vehicles:', error);
+      
+      // Set user-friendly error message
+      if (error.code === 'ECONNABORTED') {
+        setError('Connection timeout. Please check if the backend server is running.');
+      } else if (error.response?.status === 404) {
+        setError('API endpoint not found. Backend might not be deployed correctly.');
+      } else if (error.response?.status >= 500) {
+        setError('Server error. Please check the backend logs.');
+      } else if (error.message.includes('Network Error')) {
+        setError('Network error. Backend server might not be running or accessible.');
+      } else {
+        setError(`Failed to load vehicles: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -126,12 +143,34 @@ const Vehicles = () => {
     return (
       <section id="vehicles" className="py-20 bg-gradient-to-br from-gray-50 to-white">
         <div className="container-max section-padding">
-          <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center justify-center h-64">
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="w-12 h-12 border-4 border-brand-red border-t-transparent rounded-full"
+              className="w-12 h-12 border-4 border-brand-red border-t-transparent rounded-full mb-4"
             />
+            <p className="text-gray-600">Loading vehicles...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section id="vehicles" className="py-20 bg-gradient-to-br from-gray-50 to-white">
+        <div className="container-max section-padding">
+          <div className="flex flex-col items-center justify-center h-64">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-md text-center">
+              <h3 className="text-red-800 font-semibold mb-2">Unable to Load Vehicles</h3>
+              <p className="text-red-600 mb-4">{error}</p>
+              <button
+                onClick={fetchVehicles}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -164,195 +203,208 @@ const Vehicles = () => {
           </p>
         </motion.div>
 
+        {/* Show message if no vehicles from database */}
+        {vehicles.length === 0 && (
+          <div className="text-center mb-8">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 max-w-md mx-auto">
+              <p className="text-yellow-800">
+                No vehicles loaded from database. Showing static content below.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Electric Cars Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 mb-16">
-          {vehicles.map((vehicle, index) => (
-            <motion.div
-              key={vehicle.id}
-              initial={{ opacity: 0, y: 50 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: index * 0.1 }}
-              className="group relative bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
-              whileHover={{ y: -10, scale: 1.02 }}
-            >
-              {/* Badge */}
-              {vehicle.badge && (
-                <motion.div 
-                  className={`absolute top-6 left-6 ${getBadgeColorClass(vehicle.badge_color || 'bg-brand-red')} text-white px-4 py-2 rounded-full text-sm font-semibold z-20`}
-                  animate={{ 
-                    scale: [1, 1.05, 1],
-                    rotate: [0, 2, -2, 0]
-                  }}
-                  transition={{ 
-                    duration: 3, 
-                    repeat: Infinity, 
-                    ease: "easeInOut" 
-                  }}
-                >
-                  {vehicle.badge}
-                </motion.div>
-              )}
+        {vehicles.length > 0 && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-8 mb-16">
+            {vehicles.map((vehicle, index) => (
+              <motion.div
+                key={vehicle.id}
+                initial={{ opacity: 0, y: 50 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.8, delay: index * 0.1 }}
+                className="group relative bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500"
+                whileHover={{ y: -10, scale: 1.02 }}
+              >
+                {/* Badge */}
+                {vehicle.badge && (
+                  <motion.div 
+                    className={`absolute top-6 left-6 ${getBadgeColorClass(vehicle.badge_color || 'bg-brand-red')} text-white px-4 py-2 rounded-full text-sm font-semibold z-20`}
+                    animate={{ 
+                      scale: [1, 1.05, 1],
+                      rotate: [0, 2, -2, 0]
+                    }}
+                    transition={{ 
+                      duration: 3, 
+                      repeat: Infinity, 
+                      ease: "easeInOut" 
+                    }}
+                  >
+                    {vehicle.badge}
+                  </motion.div>
+                )}
 
-              {/* Rating */}
-              <div className="absolute top-6 right-6 flex items-center space-x-1 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full z-20">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${
-                      i < vehicle.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              {/* Image Carousel */}
-              <div className="relative h-64 overflow-hidden group">
-                {vehicle.images.length > 0 ? (
-                  <>
-                    <motion.img
-                      src={getImageUrl(vehicle.images[imageIndexes[vehicle.id] || 0])}
-                      alt={vehicle.name}
-                      className="w-full h-full object-cover cursor-pointer transition-transform duration-500 group-hover:scale-110"
-                      onClick={() => openLightbox(vehicle, imageIndexes[vehicle.id] || 0)}
+                {/* Rating */}
+                <div className="absolute top-6 right-6 flex items-center space-x-1 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full z-20">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-4 h-4 ${
+                        i < vehicle.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                      }`}
                     />
-                    
-                    {/* View Gallery Overlay */}
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1 }}
-                      className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer z-10"
-                      onClick={() => openLightbox(vehicle, imageIndexes[vehicle.id] || 0)}
-                    >
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        whileHover={{ scale: 1 }}
-                        className="bg-white/90 backdrop-blur-sm rounded-full p-6 flex flex-col items-center space-y-2"
-                      >
-                        <Camera className="w-8 h-8 text-brand-red" />
-                        <span className="text-brand-red font-semibold text-sm">View Gallery</span>
-                        {vehicle.images.length > 1 && (
-                          <span className="text-gray-600 text-xs">{vehicle.images.length} photos</span>
-                        )}
-                      </motion.div>
-                    </motion.div>
-                    
-                    {/* Navigation Arrows */}
-                    {vehicle.images.length > 1 && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            prevImage(vehicle.id, vehicle.images.length);
-                          }}
-                          className="absolute left-3 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors z-20 opacity-0 group-hover:opacity-100"
-                        >
-                          <ChevronLeft className="w-5 h-5 text-brand-black" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            nextImage(vehicle.id, vehicle.images.length);
-                          }}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors z-20 opacity-0 group-hover:opacity-100"
-                        >
-                          <ChevronRight className="w-5 h-5 text-brand-black" />
-                        </button>
-                      </>
-                    )}
-
-                    {/* Image Counter */}
-                    <div className="absolute bottom-3 right-3 bg-black/50 text-white px-3 py-1 rounded-full text-sm flex items-center space-x-1 z-20">
-                      <Eye className="w-3 h-3" />
-                      <span>{(imageIndexes[vehicle.id] || 0) + 1}/{vehicle.images.length}</span>
-                    </div>
-
-                    {/* Image Indicators */}
-                    {vehicle.images.length > 1 && (
-                      <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
-                        {vehicle.images.map((_, imgIndex) => (
-                          <button
-                            key={imgIndex}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setImageIndexes(prev => ({ ...prev, [vehicle.id]: imgIndex }));
-                            }}
-                            className={`w-2 h-2 rounded-full transition-all ${
-                              imgIndex === (imageIndexes[vehicle.id] || 0)
-                                ? 'bg-white scale-125'
-                                : 'bg-white/50'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                    <Car className="w-12 h-12 text-gray-400" />
-                  </div>
-                )}
-                
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-              </div>
-
-              {/* Content */}
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-2xl font-montserrat font-bold text-brand-black">
-                    {vehicle.name}
-                  </h3>
-                  <div className="flex items-center space-x-2 text-brand-red">
-                    <Battery className="w-5 h-5" />
-                    <span className="font-semibold">{vehicle.range_km}</span>
-                  </div>
-                </div>
-
-                <div className="text-3xl font-montserrat font-bold text-brand-red mb-6">
-                  {vehicle.price}
-                </div>
-
-                {/* Description */}
-                {vehicle.description && (
-                  <p className="text-gray-600 mb-4 line-clamp-2">{vehicle.description}</p>
-                )}
-
-                {/* Features */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  {vehicle.features.slice(0, 4).map((feature, idx) => (
-                    <motion.div 
-                      key={idx} 
-                      className="flex items-center space-x-2 text-sm text-gray-600"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={inView ? { opacity: 1, x: 0 } : {}}
-                      transition={{ delay: 0.5 + idx * 0.1 }}
-                    >
-                      <div className="w-2 h-2 bg-brand-red rounded-full" />
-                      <span>{feature}</span>
-                    </motion.div>
                   ))}
                 </div>
 
-                {/* CTA */}
-                <motion.button
-                  whileHover={{ 
-                    scale: 1.05,
-                    boxShadow: "0 15px 35px rgba(214, 0, 28, 0.3)"
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleGetQuote(
-                    vehicle.name, 
-                    vehicle.price, 
-                    vehicle.images.length > 0 ? getImageUrl(vehicle.images[0]) : undefined
+                {/* Image Carousel */}
+                <div className="relative h-64 overflow-hidden group">
+                  {vehicle.images.length > 0 ? (
+                    <>
+                      <motion.img
+                        src={getImageUrl(vehicle.images[imageIndexes[vehicle.id] || 0])}
+                        alt={vehicle.name}
+                        className="w-full h-full object-cover cursor-pointer transition-transform duration-500 group-hover:scale-110"
+                        onClick={() => openLightbox(vehicle, imageIndexes[vehicle.id] || 0)}
+                      />
+                      
+                      {/* View Gallery Overlay */}
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        whileHover={{ opacity: 1 }}
+                        className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer z-10"
+                        onClick={() => openLightbox(vehicle, imageIndexes[vehicle.id] || 0)}
+                      >
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          whileHover={{ scale: 1 }}
+                          className="bg-white/90 backdrop-blur-sm rounded-full p-6 flex flex-col items-center space-y-2"
+                        >
+                          <Camera className="w-8 h-8 text-brand-red" />
+                          <span className="text-brand-red font-semibold text-sm">View Gallery</span>
+                          {vehicle.images.length > 1 && (
+                            <span className="text-gray-600 text-xs">{vehicle.images.length} photos</span>
+                          )}
+                        </motion.div>
+                      </motion.div>
+                      
+                      {/* Navigation Arrows */}
+                      {vehicle.images.length > 1 && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              prevImage(vehicle.id, vehicle.images.length);
+                            }}
+                            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors z-20 opacity-0 group-hover:opacity-100"
+                          >
+                            <ChevronLeft className="w-5 h-5 text-brand-black" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              nextImage(vehicle.id, vehicle.images.length);
+                            }}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors z-20 opacity-0 group-hover:opacity-100"
+                          >
+                            <ChevronRight className="w-5 h-5 text-brand-black" />
+                          </button>
+                        </>
+                      )}
+
+                      {/* Image Counter */}
+                      <div className="absolute bottom-3 right-3 bg-black/50 text-white px-3 py-1 rounded-full text-sm flex items-center space-x-1 z-20">
+                        <Eye className="w-3 h-3" />
+                        <span>{(imageIndexes[vehicle.id] || 0) + 1}/{vehicle.images.length}</span>
+                      </div>
+
+                      {/* Image Indicators */}
+                      {vehicle.images.length > 1 && (
+                        <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+                          {vehicle.images.map((_, imgIndex) => (
+                            <button
+                              key={imgIndex}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setImageIndexes(prev => ({ ...prev, [vehicle.id]: imgIndex }));
+                              }}
+                              className={`w-2 h-2 rounded-full transition-all ${
+                                imgIndex === (imageIndexes[vehicle.id] || 0)
+                                  ? 'bg-white scale-125'
+                                  : 'bg-white/50'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                      <Car className="w-12 h-12 text-gray-400" />
+                    </div>
                   )}
-                  className="w-full btn-primary flex items-center justify-center space-x-2"
-                >
-                  <Mail className="w-5 h-5" />
-                  <span>Get Quote</span>
-                </motion.button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                  
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                </div>
+
+                {/* Content */}
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-2xl font-montserrat font-bold text-brand-black">
+                      {vehicle.name}
+                    </h3>
+                    <div className="flex items-center space-x-2 text-brand-red">
+                      <Battery className="w-5 h-5" />
+                      <span className="font-semibold">{vehicle.range_km}</span>
+                    </div>
+                  </div>
+
+                  <div className="text-3xl font-montserrat font-bold text-brand-red mb-6">
+                    {vehicle.price}
+                  </div>
+
+                  {/* Description */}
+                  {vehicle.description && (
+                    <p className="text-gray-600 mb-4 line-clamp-2">{vehicle.description}</p>
+                  )}
+
+                  {/* Features */}
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    {vehicle.features.slice(0, 4).map((feature, idx) => (
+                      <motion.div 
+                        key={idx} 
+                        className="flex items-center space-x-2 text-sm text-gray-600"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={inView ? { opacity: 1, x: 0 } : {}}
+                        transition={{ delay: 0.5 + idx * 0.1 }}
+                      >
+                        <div className="w-2 h-2 bg-brand-red rounded-full" />
+                        <span>{feature}</span>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* CTA */}
+                  <motion.button
+                    whileHover={{ 
+                      scale: 1.05,
+                      boxShadow: "0 15px 35px rgba(214, 0, 28, 0.3)"
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleGetQuote(
+                      vehicle.name, 
+                      vehicle.price, 
+                      vehicle.images.length > 0 ? getImageUrl(vehicle.images[0]) : undefined
+                    )}
+                    className="w-full btn-primary flex items-center justify-center space-x-2"
+                  >
+                    <Mail className="w-5 h-5" />
+                    <span>Get Quote</span>
+                  </motion.button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Electric Tricycle Section */}
         <motion.div

@@ -4,8 +4,12 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 
   (import.meta.env.PROD ? 'https://fazona.org/api' : 'http://localhost:5000/api');
 
+console.log('🔍 API Base URL:', API_BASE_URL);
+console.log('🔍 Environment:', import.meta.env.PROD ? 'Production' : 'Development');
+
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 10000, // 10 second timeout
 });
 
 // Add auth token to requests
@@ -14,8 +18,27 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  console.log('🚀 Making request to:', config.url);
   return config;
 });
+
+// Add response interceptor for debugging
+api.interceptors.response.use(
+  (response) => {
+    console.log('✅ API Response:', response.status, response.config.url);
+    return response;
+  },
+  (error) => {
+    console.error('❌ API Error:', error.response?.status, error.config?.url, error.message);
+    if (error.response?.status === 404) {
+      console.error('🔍 API endpoint not found. Check if backend is running.');
+    }
+    if (error.code === 'ECONNABORTED') {
+      console.error('⏰ Request timeout. Backend might be slow or not responding.');
+    }
+    return Promise.reject(error);
+  }
+);
 
 export interface Vehicle {
   id: number;
@@ -48,13 +71,18 @@ export interface LoginResponse {
 
 // Public API
 export const vehicleAPI = {
-  getAll: () => api.get<Vehicle[]>('/vehicles'),
+  getAll: () => {
+    console.log('🚗 Fetching vehicles from:', `${API_BASE_URL}/vehicles`);
+    return api.get<Vehicle[]>('/vehicles');
+  },
 };
 
 // Admin API
 export const adminAPI = {
-  login: (credentials: { username: string; password: string }) =>
-    api.post<LoginResponse>('/admin/login', credentials),
+  login: (credentials: { username: string; password: string }) => {
+    console.log('🔐 Attempting admin login to:', `${API_BASE_URL}/admin/login`);
+    return api.post<LoginResponse>('/admin/login', credentials);
+  },
   
   vehicles: {
     getAll: () => api.get<Vehicle[]>('/admin/vehicles'),
