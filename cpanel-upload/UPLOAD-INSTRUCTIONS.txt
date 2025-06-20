@@ -1,0 +1,47 @@
+🚀 FaZona EV - cPanel Upload Instructions
+=========================================
+
+📁 WHAT TO UPLOAD WHERE:
+
+1. FRONTEND FILES (Upload to public_html/):
+   ✅ index.html
+   ✅ assets/ folder (CSS, JS, images)
+   ✅ fazona/ folder (vehicle images)
+   ✅ .htaccess file
+
+2. BACKEND FILES (Upload to public_html/api/):
+   ✅ All contents of api/ folder
+   ✅ Edit api/.env with your database details
+
+3. DATABASE SETUP:
+   ✅ Create MySQL database in cPanel
+   ✅ Import database-setup.sql in phpMyAdmin
+
+🗄️ DATABASE CONFIGURATION:
+
+1. Go to cPanel → MySQL Databases
+2. Create database: fazonaev
+3. Create user: dbuser
+4. Add user to database with ALL PRIVILEGES
+5. Note your details:
+   - Database: yourusername_fazonaev
+   - User: yourusername_dbuser
+   - Host: localhost
+
+6. Edit api/.env file with your actual details
+
+✅ AFTER UPLOAD:
+
+1. Visit: https://fazona.org
+2. Admin: https://fazona.org/admin
+3. Login: admin / admin123
+4. ⚠️ CHANGE PASSWORD IMMEDIATELY!
+
+🌐 IF NO NODE.JS SUPPORT:
+Your website will still work perfectly as a static site!
+Only the admin panel needs Node.js.
+
+📞 NEED HELP?
+Ask your hosting provider about Node.js support.
+
+Your FaZona EV website is ready to go live! 🚗⚡
