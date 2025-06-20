@@ -12,11 +12,11 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Admin Route */}
-        <Route path="/admin" element={<AdminPanel />} />
+        {/* Admin Route - Must come first to avoid conflicts */}
+        <Route path="/admin/*" element={<AdminPanel />} />
         
         {/* Main Website */}
-        <Route path="/" element={
+        <Route path="/*" element={
           <div className="min-h-screen bg-brand-white">
             <Header />
             <Hero />

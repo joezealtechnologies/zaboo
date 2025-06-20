@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import AdminLogin from './AdminLogin';
 import AdminDashboard from './AdminDashboard';
 
@@ -40,11 +41,30 @@ const AdminPanel: React.FC = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <AdminLogin onLogin={handleLogin} />;
-  }
-
-  return <AdminDashboard user={user} onLogout={handleLogout} />;
+  return (
+    <Routes>
+      <Route 
+        path="/" 
+        element={
+          !isAuthenticated ? (
+            <AdminLogin onLogin={handleLogin} />
+          ) : (
+            <AdminDashboard user={user} onLogout={handleLogout} />
+          )
+        } 
+      />
+      <Route 
+        path="/*" 
+        element={
+          !isAuthenticated ? (
+            <AdminLogin onLogin={handleLogin} />
+          ) : (
+            <AdminDashboard user={user} onLogout={handleLogout} />
+          )
+        } 
+      />
+    </Routes>
+  );
 };
 
 export default AdminPanel;
