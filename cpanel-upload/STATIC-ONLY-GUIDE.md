@@ -6,8 +6,8 @@ If your hosting doesn't support Node.js, you can still deploy FaZona EV as a bea
 
 Upload to `public_html/`:
 - `index.html`
-- `assets/` folder
-- `fazona/` folder
+- `assets/` folder (CSS, JS, images)
+- `fazona/` folder (vehicle images)
 - `.htaccess` file
 
 **Skip the `api/` folder and database setup.**
@@ -23,6 +23,7 @@ Upload to `public_html/`:
 - Contact forms (opens email client)
 - All animations and interactions
 - Mobile-friendly design
+- All CSS styling and JavaScript
 
 **❌ Not Available:**
 - Admin panel
@@ -45,7 +46,7 @@ Upload to `public_html/`:
 
 3. **Test Website:**
    - Visit https://fazona.org
-   - Should work perfectly!
+   - Should work perfectly with full styling!
 
 ---
 
@@ -74,6 +75,7 @@ To get the admin panel working later:
 - 🔒 **Secure** - No server vulnerabilities
 - 📱 **Mobile perfect** - Responsive design
 - 🎨 **Professional** - Beautiful animations
+- 💅 **Full styling** - All CSS and JS included
 
 ---
 
@@ -86,6 +88,6 @@ The contact forms will:
 
 ---
 
-**Your static website will look amazing and professional!** 🚗⚡
+**Your static website will look amazing and professional with full styling!** 🚗⚡
 
 **Live at: https://fazona.org** 🌐

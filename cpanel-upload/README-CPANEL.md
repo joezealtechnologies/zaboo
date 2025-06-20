@@ -2,7 +2,7 @@
 
 ## ✅ **Pre-Upload Checklist**
 
-- [ ] Built website files ready
+- [ ] Built website files ready (including assets folder)
 - [ ] Backend files prepared
 - [ ] Database script ready
 - [ ] cPanel login details available
@@ -14,8 +14,8 @@
 ### **1. Website Files (public_html/)**
 Upload these to your domain root:
 - [ ] `index.html`
-- [ ] `assets/` folder
-- [ ] `fazona/` folder
+- [ ] `assets/` folder (CSS, JS, images)
+- [ ] `fazona/` folder (vehicle images)
 - [ ] `.htaccess` file
 
 ### **2. Backend Files (public_html/api/)**
@@ -57,6 +57,7 @@ DB_NAME=[your_username]_fazonaev
 
 After upload, test:
 - [ ] Website loads: https://fazona.org
+- [ ] CSS and JS load correctly (check assets folder)
 - [ ] Admin panel: https://fazona.org/admin
 - [ ] Login works: admin/admin123
 - [ ] Images display correctly
@@ -70,6 +71,12 @@ After upload, test:
 - Check if all files uploaded correctly
 - Verify `.htaccess` is in place
 - Check file permissions
+- Ensure `assets/` folder is uploaded
+
+### **Styling broken:**
+- Verify `assets/` folder uploaded completely
+- Check CSS files in assets folder
+- Check browser console for 404 errors
 
 ### **Admin panel not working:**
 - Verify Node.js support with hosting provider

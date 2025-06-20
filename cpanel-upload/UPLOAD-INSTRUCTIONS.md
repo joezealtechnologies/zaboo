@@ -8,6 +8,7 @@ Your complete deployment package contains:
 - ✅ Database setup script
 - ✅ Configuration files
 - ✅ All vehicle images
+- ✅ Assets folder with CSS/JS
 
 ---
 
@@ -16,7 +17,7 @@ Your complete deployment package contains:
 ### **Step 1: Upload Website Files**
 Upload to your `public_html/` folder:
 - `index.html`
-- `assets/` folder (CSS, JS, etc.)
+- `assets/` folder (CSS, JS, etc.) ← **This is now included!**
 - `fazona/` folder (vehicle images)
 - `.htaccess` file
 
