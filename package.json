@@ -15,7 +15,9 @@
     "start": "npm run server",
     "deploy": "npm run build && pm2 restart ecosystem.config.js --env production",
     "backup": "bash deploy/backup.sh",
-    "monitor": "bash deploy/monitoring.sh"
+    "monitor": "bash deploy/monitoring.sh",
+    "deploy:vps": "bash deploy-actions.sh",
+    "deploy:simple": "bash deploy-simple.sh"
   },
   "dependencies": {
     "react": "^18.2.0",
