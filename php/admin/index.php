@@ -108,6 +108,62 @@ if ($is_logged_in) {
         $success_message = 'Vehicle created successfully!';
     }
     
+    // Handle vehicle update
+    if ($_POST['action'] ?? '' === 'update_vehicle') {
+        $vehicle_id = (int)($_POST['vehicle_id'] ?? 0);
+        $name = $_POST['name'] ?? '';
+        $price = $_POST['price'] ?? '';
+        $range_km = $_POST['range_km'] ?? '';
+        $description = $_POST['description'] ?? '';
+        $features = $_POST['features'] ?? '';
+        $badge = $_POST['badge'] ?? '';
+        $badge_color = $_POST['badge_color'] ?? '';
+        $rating = (int)($_POST['rating'] ?? 5);
+        $is_active = isset($_POST['is_active']) ? 1 : 0;
+        
+        // Convert features to JSON
+        $features_array = array_map('trim', explode(',', $features));
+        $features_json = json_encode($features_array);
+        
+        $stmt = $pdo->prepare("
+            UPDATE vehicles 
+            SET name = ?, price = ?, range_km = ?, description = ?, features = ?, badge = ?, badge_color = ?, rating = ?, is_active = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([$name, $price, $range_km, $description, $features_json, $badge, $badge_color, $rating, $is_active, $vehicle_id]);
+        
+        // Handle new image uploads
+        if (isset($_FILES['images'])) {
+            $upload_dir = '../uploads/';
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0755, true);
+            }
+            
+            foreach ($_FILES['images']['tmp_name'] as $key => $tmp_name) {
+                if ($_FILES['images']['error'][$key] === UPLOAD_ERR_OK) {
+                    $file_name = 'vehicle-' . time() . '-' . rand(100000, 999999) . '.' . pathinfo($_FILES['images']['name'][$key], PATHINFO_EXTENSION);
+                    $file_path = $upload_dir . $file_name;
+                    
+                    if (move_uploaded_file($tmp_name, $file_path)) {
+                        $image_url = '/uploads/' . $file_name;
+                        
+                        // Check if this vehicle has any existing images
+                        $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM vehicle_images WHERE vehicle_id = ?");
+                        $stmt->execute([$vehicle_id]);
+                        $existing_count = $stmt->fetch()['count'];
+                        
+                        $is_primary = ($existing_count == 0 && $key === 0) ? 1 : 0; // First image is primary if no existing images
+                        
+                        $stmt = $pdo->prepare("INSERT INTO vehicle_images (vehicle_id, image_url, is_primary) VALUES (?, ?, ?)");
+                        $stmt->execute([$vehicle_id, $image_url, $is_primary]);
+                    }
+                }
+            }
+        }
+        
+        $success_message = 'Vehicle updated successfully!';
+    }
+    
     // Handle vehicle deletion
     if ($_POST['action'] ?? '' === 'delete_vehicle') {
         $vehicle_id = (int)($_POST['vehicle_id'] ?? 0);
@@ -139,6 +195,43 @@ if ($is_logged_in) {
         $stmt->execute([$vehicle_id]);
         
         $success_message = 'Vehicle status updated!';
+    }
+    
+    // Handle image deletion
+    if ($_POST['action'] ?? '' === 'delete_image') {
+        $image_id = (int)($_POST['image_id'] ?? 0);
+        $vehicle_id = (int)($_POST['vehicle_id'] ?? 0);
+        
+        // Get image info
+        $stmt = $pdo->prepare("SELECT image_url, is_primary FROM vehicle_images WHERE id = ?");
+        $stmt->execute([$image_id]);
+        $image = $stmt->fetch();
+        
+        if ($image) {
+            // Delete file
+            $file_path = '..' . $image['image_url'];
+            if (file_exists($file_path)) {
+                unlink($file_path);
+            }
+            
+            // Delete from database
+            $stmt = $pdo->prepare("DELETE FROM vehicle_images WHERE id = ?");
+            $stmt->execute([$image_id]);
+            
+            // If this was the primary image, set another image as primary
+            if ($image['is_primary']) {
+                $stmt = $pdo->prepare("SELECT id FROM vehicle_images WHERE vehicle_id = ? ORDER BY created_at ASC LIMIT 1");
+                $stmt->execute([$vehicle_id]);
+                $next_image = $stmt->fetch();
+                
+                if ($next_image) {
+                    $stmt = $pdo->prepare("UPDATE vehicle_images SET is_primary = 1 WHERE id = ?");
+                    $stmt->execute([$next_image['id']]);
+                }
+            }
+        }
+        
+        $success_message = 'Image deleted successfully!';
     }
     
     // Fetch all vehicles for admin
@@ -462,7 +555,13 @@ if ($is_logged_in) {
                         </div>
 
                         <!-- Actions -->
-                        <div class="flex space-x-2">
+                        <div class="flex space-x-2 mb-3">
+                            <button onclick="openEditModal(<?= htmlspecialchars(json_encode($vehicle)) ?>)" class="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                <span>Edit</span>
+                            </button>
                             <form method="POST" class="flex-1">
                                 <input type="hidden" name="action" value="toggle_status">
                                 <input type="hidden" name="vehicle_id" value="<?= $vehicle['id'] ?>">
@@ -473,6 +572,15 @@ if ($is_logged_in) {
                                     <span><?= $vehicle['is_active'] ? 'Hide' : 'Show' ?></span>
                                 </button>
                             </form>
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <button onclick="openImagesModal(<?= $vehicle['id'] ?>, '<?= htmlspecialchars($vehicle['name']) ?>', <?= htmlspecialchars(json_encode($vehicle['images'])) ?>)" class="flex-1 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>Images</span>
+                            </button>
                             <form method="POST" class="flex-1" onsubmit="return confirm('Are you sure you want to delete this vehicle?')">
                                 <input type="hidden" name="action" value="delete_vehicle">
                                 <input type="hidden" name="vehicle_id" value="<?= $vehicle['id'] ?>">
@@ -596,6 +704,132 @@ if ($is_logged_in) {
         </div>
     </div>
 
+    <!-- Edit Vehicle Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content max-w-4xl">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-t-3xl -m-8 mb-8">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-montserrat font-bold">Edit Vehicle</h2>
+                    <button onclick="closeEditModal()" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <form method="POST" enctype="multipart/form-data" class="space-y-6">
+                <input type="hidden" name="action" value="update_vehicle">
+                <input type="hidden" name="vehicle_id" id="edit_vehicle_id">
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-brand-black mb-2">Vehicle Name *</label>
+                        <input type="text" name="name" id="edit_name" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-red focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-brand-black mb-2">Price *</label>
+                        <input type="text" name="price" id="edit_price" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-red focus:border-transparent">
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-brand-black mb-2">Range *</label>
+                        <input type="text" name="range_km" id="edit_range_km" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-red focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-brand-black mb-2">Rating</label>
+                        <select name="rating" id="edit_rating" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-red focus:border-transparent">
+                            <option value="5">5 Stars</option>
+                            <option value="4">4 Stars</option>
+                            <option value="3">3 Stars</option>
+                            <option value="2">2 Stars</option>
+                            <option value="1">1 Star</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-brand-black mb-2">Description</label>
+                    <textarea name="description" id="edit_description" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-red focus:border-transparent resize-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-brand-black mb-2">Features (comma separated)</label>
+                    <input type="text" name="features" id="edit_features" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-red focus:border-transparent">
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-brand-black mb-2">Badge Text</label>
+                        <input type="text" name="badge" id="edit_badge" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-red focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-brand-black mb-2">Badge Color</label>
+                        <select name="badge_color" id="edit_badge_color" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-red focus:border-transparent">
+                            <option value="">Select Color</option>
+                            <option value="bg-brand-red">Brand Red</option>
+                            <option value="bg-green-500">Green</option>
+                            <option value="bg-blue-500">Blue</option>
+                            <option value="bg-yellow-500">Yellow</option>
+                            <option value="bg-purple-500">Purple</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <input type="checkbox" id="edit_is_active" name="is_active" class="w-5 h-5 text-brand-red border-gray-300 rounded focus:ring-brand-red">
+                    <label for="edit_is_active" class="text-sm font-semibold text-brand-black">Active (visible on website)</label>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-brand-black mb-2">Add New Images</label>
+                    <div class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
+                        <input type="file" name="images[]" multiple accept="image/*" class="hidden" id="edit-image-upload">
+                        <label for="edit-image-upload" class="cursor-pointer flex flex-col items-center space-y-2">
+                            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <span class="text-gray-600">Click to upload additional images</span>
+                            <span class="text-sm text-gray-500">PNG, JPG up to 5MB each • Multiple files supported</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-4 rounded-xl font-montserrat font-semibold transition-all duration-300 flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Update Vehicle</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Images Modal -->
+    <div id="imagesModal" class="modal">
+        <div class="modal-content max-w-4xl">
+            <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-t-3xl -m-8 mb-8">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-montserrat font-bold">Manage Images</h2>
+                    <button onclick="closeImagesModal()" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div id="imagesContent">
+                <!-- Images will be loaded here -->
+            </div>
+        </div>
+    </div>
+
     <script>
         function openAddModal() {
             document.getElementById('addModal').classList.add('show');
@@ -607,10 +841,72 @@ if ($is_logged_in) {
             document.body.style.overflow = 'auto';
         }
 
-        // Close modal when clicking outside
+        function openEditModal(vehicle) {
+            document.getElementById('edit_vehicle_id').value = vehicle.id;
+            document.getElementById('edit_name').value = vehicle.name;
+            document.getElementById('edit_price').value = vehicle.price;
+            document.getElementById('edit_range_km').value = vehicle.range_km;
+            document.getElementById('edit_description').value = vehicle.description || '';
+            document.getElementById('edit_features').value = vehicle.features.join(', ');
+            document.getElementById('edit_badge').value = vehicle.badge || '';
+            document.getElementById('edit_badge_color').value = vehicle.badge_color || '';
+            document.getElementById('edit_rating').value = vehicle.rating;
+            document.getElementById('edit_is_active').checked = vehicle.is_active == 1;
+            
+            document.getElementById('editModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        function openImagesModal(vehicleId, vehicleName, images) {
+            const content = document.getElementById('imagesContent');
+            
+            let html = `<h3 class="text-xl font-bold mb-4">Images for: ${vehicleName}</h3>`;
+            
+            if (images.length > 0) {
+                html += '<div class="grid grid-cols-2 md:grid-cols-3 gap-4">';
+                images.forEach((image, index) => {
+                    html += `
+                        <div class="relative group">
+                            <img src="${image}" alt="Vehicle Image" class="w-full h-32 object-cover rounded-lg">
+                            <form method="POST" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <input type="hidden" name="action" value="delete_image">
+                                <input type="hidden" name="vehicle_id" value="${vehicleId}">
+                                <input type="hidden" name="image_id" value="${index + 1}">
+                                <button type="submit" onclick="return confirm('Delete this image?')" class="bg-red-500 text-white p-1 rounded-full hover:bg-red-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </form>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            } else {
+                html += '<p class="text-gray-500 text-center py-8">No images uploaded for this vehicle.</p>';
+            }
+            
+            content.innerHTML = html;
+            document.getElementById('imagesModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeImagesModal() {
+            document.getElementById('imagesModal').classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modals when clicking outside
         document.addEventListener('click', function(event) {
             if (event.target.classList.contains('modal')) {
                 closeAddModal();
+                closeEditModal();
+                closeImagesModal();
             }
         });
 
@@ -620,6 +916,14 @@ if ($is_logged_in) {
             if (files.length > 0) {
                 const label = e.target.nextElementSibling;
                 label.querySelector('span').textContent = `${files.length} file(s) selected`;
+            }
+        });
+
+        document.getElementById('edit-image-upload').addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                const label = e.target.nextElementSibling;
+                label.querySelector('span').textContent = `${files.length} new file(s) selected`;
             }
         });
     </script>
