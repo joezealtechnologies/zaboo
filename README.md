@@ -1,165 +1,149 @@
-# FaZona EV Website with Backend Management
+# 🚗⚡ FaZona EV - Complete Electric Vehicle Website
 
-A complete electric vehicle website with backend management system for FaZona EV.
+Nigeria's Premier Electric Vehicle Brand with Full Backend Management System.
 
-## Features
+## 🌟 Features
 
-### Frontend
+### 🎨 **Frontend**
 - Modern React website with Framer Motion animations
 - Responsive design with Tailwind CSS
 - Dynamic vehicle listings from database
-- Image carousels for multiple vehicle photos
+- Image galleries with lightbox functionality
 - Contact forms and quote requests
+- Professional admin panel
 
-### Backend
+### 🔧 **Backend**
 - Express.js REST API
 - MySQL database with proper relationships
 - JWT authentication for admin access
 - File upload handling for vehicle images
 - CRUD operations for vehicle management
+- Image carousel management
 
-### Admin Panel
+### 🛡️ **Admin Panel**
 - Secure login system (default: admin/admin123)
 - Vehicle management dashboard
 - Multiple image upload per vehicle
-- Image carousel management
-- Vehicle status control (active/inactive)
 - Real-time preview of changes
+- Vehicle status control (active/inactive)
 
-## Setup Instructions
+## 🚀 **Quick Deployment Options**
 
-### 1. Database Setup
-Install MySQL and create a database:
-```sql
-CREATE DATABASE fazona_ev;
+### **Option 1: VPS Deployment (Recommended)**
+```bash
+# Clone repository to your VPS
+git clone https://github.com/yourusername/fazona-ev.git /var/www/fazona.org
+cd /var/www/fazona.org
+
+# Run automated deployment
+chmod +x deploy/quick-vps-setup.sh
+./deploy/quick-vps-setup.sh
 ```
 
-### 2. Environment Configuration
-Update the `.env` file with your database credentials:
+### **Option 2: cPanel Hosting**
+1. Upload files from `cpanel-upload/` folder to your cPanel
+2. Create MySQL database and import SQL file
+3. Configure database credentials
+4. Access admin panel at `yourdomain.com/admin`
+
+### **Option 3: Local Development**
+```bash
+# Install dependencies
+npm install
+
+# Setup database
+npm run db:setup
+
+# Start development servers
+npm run dev:full
+```
+
+## 🌐 **Live Access Points**
+
+- **Main Website:** https://fazona.org
+- **Admin Panel:** https://fazona.org/admin
+- **API Endpoints:** https://fazona.org/api
+
+## 🔐 **Default Admin Credentials**
+
+- **Username:** admin
+- **Password:** admin123
+- **⚠️ Change immediately after first login!**
+
+## 📁 **Project Structure**
+
+```
+fazona-ev/
+├── src/                     # React frontend source
+├── server/                  # Node.js backend
+├── deploy/                  # VPS deployment scripts
+├── cpanel-upload/          # cPanel hosting files
+├── supabase/migrations/    # Database setup scripts
+├── public/                 # Static assets
+└── dist/                   # Built frontend (generated)
+```
+
+## 🛠️ **Technology Stack**
+
+- **Frontend:** React, TypeScript, Tailwind CSS, Framer Motion
+- **Backend:** Node.js, Express.js, MySQL
+- **Authentication:** JWT
+- **File Upload:** Multer
+- **Deployment:** PM2, Nginx, Let's Encrypt SSL
+
+## 📊 **Database Schema**
+
+- `admin_users` - Admin authentication
+- `vehicles` - Vehicle information
+- `vehicle_images` - Multiple images per vehicle with primary image support
+
+## 🔧 **Environment Variables**
+
 ```env
 DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_password
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
 DB_NAME=fazona_ev
 DB_PORT=3306
-JWT_SECRET=your_secret_key
+JWT_SECRET=your_jwt_secret
+NODE_ENV=production
 PORT=5000
 ```
 
-### 3. Install Dependencies
-```bash
-npm install
-```
+## 📞 **Support & Contact**
 
-### 4. Start the Application
-```bash
-# Start both frontend and backend
-npm run dev:full
+- **Email:** evfazona@gmail.com
+- **WhatsApp:** +234 913 585 9888
+- **Instagram:** @fazona_ev
 
-# Or start separately:
-# Backend only
-npm run server
+## 🎯 **Deployment Features**
 
-# Frontend only
-npm run dev
-```
+✅ **Complete Full-Stack Application**
+✅ **Automated SSL Certificate Setup**
+✅ **Database Backup System**
+✅ **Health Monitoring Scripts**
+✅ **Production Optimization**
+✅ **Security Configuration**
 
-### 5. Access the Application
-- **Website**: http://localhost:3000
-- **Admin Panel**: http://localhost:3000/admin
-- **API**: http://localhost:5000/api
+## 📈 **Performance**
 
-## Admin Panel Usage
+- Optimized build with code splitting
+- Image optimization and lazy loading
+- Gzip compression
+- CDN-ready static assets
+- Database query optimization
 
-### Default Login Credentials
-- **Username**: admin
-- **Email**: admin@fazonaev.com
-- **Password**: admin123
+## 🔒 **Security**
 
-### Managing Vehicles
-1. Login to admin panel at `/admin`
-2. Click "Add Vehicle" to create new listings
-3. Upload multiple images per vehicle
-4. Set vehicle details, pricing, and features
-5. Control visibility with active/inactive status
-6. Edit or delete existing vehicles
+- JWT token authentication
+- SQL injection protection
+- File upload validation
+- CORS configuration
+- Rate limiting
+- SSL/HTTPS enforcement
 
-### Image Management
-- Upload multiple images per vehicle
-- First uploaded image becomes primary
-- Navigate through images with arrow controls
-- Delete individual images
-- Set any image as primary
+---
 
-## Database Schema
+**Drive the Future Today with FaZona EV!** 🚗⚡
 
-### Tables
-- `admin_users`: Admin authentication
-- `vehicles`: Vehicle information
-- `vehicle_images`: Multiple images per vehicle
-
-### Key Features
-- Foreign key relationships
-- Cascade delete for images
-- JSON storage for features array
-- Automatic timestamps
-
-## API Endpoints
-
-### Public Endpoints
-- `GET /api/vehicles` - Get all active vehicles
-
-### Admin Endpoints (Requires Authentication)
-- `POST /api/admin/login` - Admin login
-- `GET /api/admin/vehicles` - Get all vehicles
-- `POST /api/admin/vehicles` - Create vehicle
-- `PUT /api/admin/vehicles/:id` - Update vehicle
-- `DELETE /api/admin/vehicles/:id` - Delete vehicle
-- `DELETE /api/admin/vehicles/:vehicleId/images/:imageId` - Delete image
-- `PUT /api/admin/vehicles/:vehicleId/images/:imageId/primary` - Set primary image
-
-## File Structure
-```
-├── server/
-│   ├── index.js          # Express server
-│   └── uploads/          # Uploaded images
-├── src/
-│   ├── components/
-│   │   ├── admin/        # Admin panel components
-│   │   └── ...           # Website components
-│   ├── services/
-│   │   └── api.ts        # API service layer
-│   └── ...
-├── .env                  # Environment variables
-└── package.json
-```
-
-## Production Deployment
-
-### Database
-1. Set up MySQL database on your server
-2. Update `.env` with production database credentials
-3. Ensure proper database permissions
-
-### Backend
-1. Deploy Express server to your hosting platform
-2. Set environment variables
-3. Ensure file upload directory permissions
-
-### Frontend
-1. Update API base URL in production
-2. Build and deploy React application
-3. Configure routing for admin panel
-
-## Security Notes
-
-- Change default admin credentials in production
-- Use strong JWT secret
-- Implement rate limiting
-- Add input validation
-- Use HTTPS in production
-- Secure file upload directory
-
-## Support
-
-For technical support or questions about the backend system, contact the development team.
+Built with ❤️ for sustainable transportation in Nigeria.
