@@ -17,7 +17,10 @@
     "backup": "bash deploy/backup.sh",
     "monitor": "bash deploy/monitoring.sh",
     "deploy:vps": "bash deploy-actions.sh",
-    "deploy:simple": "bash deploy-simple.sh"
+    "deploy:simple": "bash deploy-simple.sh",
+    "deploy:no-sudo": "bash deploy-no-sudo.sh",
+    "deploy:minimal": "bash deploy-minimal.sh",
+    "deploy:docker": "bash deploy-docker.sh"
   },
   "dependencies": {
     "react": "^18.2.0",
